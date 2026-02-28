@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 
 	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/empty"
+	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 )
@@ -110,15 +112,17 @@ func PublishFeature(ctx context.Context, dir string, ref string, opts ...remote.
 		return fmt.Errorf("failed to package feature: %w", err)
 	}
 
-	// Load the tarball as an image
-	img, err := tarball.ImageFromPath(tmpPath, nil)
+	// Load the tarball as a layer
+	layer, err := tarball.LayerFromFile(tmpPath)
 	if err != nil {
-		return fmt.Errorf("failed to load tarball: %w", err)
+		return fmt.Errorf("failed to create layer from tarball: %w", err)
 	}
 
-	// For now, push the tarball image directly
-	// The feature metadata is embedded in the tarball files
-	// (devcontainer-feature.json and install.sh)
+	// Create an image from the layer using mutate.AppendLayers
+	img, err := mutate.AppendLayers(empty.Image, layer)
+	if err != nil {
+		return fmt.Errorf("failed to append layer to image: %w", err)
+	}
 
 	// Parse reference and push
 	refParsed, err := name.ParseReference(ref)
