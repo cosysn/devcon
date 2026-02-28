@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -28,19 +29,22 @@ func ParseDevcontainer(dir string) (*DevcontainerConfig, error) {
 	path := filepath.Join(dir, ".devcontainer", "devcontainer.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read devcontainer.json: %w", err)
 	}
 
 	parsed, err := ParseJSONC(string(data))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse JSONC: %w", err)
 	}
 
 	// Simple JSON unmarshal into struct
-	jsonData, _ := json.Marshal(parsed)
+	jsonData, err := json.Marshal(parsed)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal parsed config: %w", err)
+	}
 	var config DevcontainerConfig
 	if err := json.Unmarshal(jsonData, &config); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
 	return &config, nil
