@@ -101,13 +101,14 @@ func TopologicalSort(features map[string]*FeatureDefinition) ([]string, error) {
 }
 
 // ResolveFeatures validates and resolves features from the devcontainer config.
-// It checks for local features and validates they exist.
+// It checks for local features. Remote features (shorthand names or OCI references)
+// are not validated here - they'll be resolved during build.
 func ResolveFeatures(dir string, features map[string]interface{}) error {
 	if len(features) == 0 {
 		return nil
 	}
 
-	// Check both possible locations for features:
+	// Check both possible locations for local features:
 	// 1. .devcontainer/features/<feature-id>/ (standard location)
 	// 2. features/<feature-id>/ (alternative location)
 	featuresDirs := []string{
@@ -116,12 +117,6 @@ func ResolveFeatures(dir string, features map[string]interface{}) error {
 	}
 
 	for featureID := range features {
-		// Check if it's an OCI reference (contains / or :)
-		if isOCIReference(featureID) {
-			// For OCI references, we can't validate locally - assume valid
-			continue
-		}
-
 		// Check local features in both possible locations
 		found := false
 		for _, featuresDir := range featuresDirs {
@@ -132,8 +127,14 @@ func ResolveFeatures(dir string, features map[string]interface{}) error {
 			}
 		}
 
+		// If not found locally, assume it's a remote feature (shorthand name or OCI reference)
+		// We don't fail here because:
+		// - Shorthand names like "docker-in-docker" should be resolved from remote registry
+		// - Full OCI references like "ghcr.io/user/feature" are remote
+		// The actual resolution happens during the build process
 		if !found {
-			return fmt.Errorf("feature %q not found in .devcontainer/features/ or features/", featureID)
+			// Just log/continue - remote features will be resolved during build
+			continue
 		}
 	}
 

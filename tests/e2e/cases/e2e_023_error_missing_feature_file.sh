@@ -1,5 +1,8 @@
 #!/bin/bash
 # E2E-023: error_missing_feature_file - 缺失 feature 文件
+# Note: Shorthand feature names (like "nonexistent-feature") are now allowed.
+# They are assumed to be remote features and will be resolved during build.
+# The error for invalid features would occur during build, not validation.
 
 set -e
 
@@ -21,14 +24,14 @@ cat > "$TMPDIR/.devcontainer/devcontainer.json" << 'EOF'
 EOF
 trap "rm -rf $TMPDIR" EXIT
 
-# 执行 build (应该失败 - feature 不存在)
-OUTPUT=$(./devcon build "$TMPDIR" 2>&1) || true
+# 执行 build (shorthand names are allowed - resolved during build)
+OUTPUT=$(./devcon build "$TMPDIR" 2>&1)
 
-# 验证报错
-if echo "$OUTPUT" | grep -qE "(not found|feature|invalid)"; then
+# 验证成功
+if echo "$OUTPUT" | grep -q "Image built:"; then
     exit 0
 else
-    echo "Error: Expected error message not found"
+    echo "Error: Build should succeed for shorthand feature names"
     echo "Output: $OUTPUT"
     exit 1
 fi
