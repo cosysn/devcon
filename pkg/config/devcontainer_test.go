@@ -116,6 +116,9 @@ func TestResolveExtends(t *testing.T) {
 	if result.Env == nil {
 		t.Fatal("env should not be nil")
 	}
+	if v, ok := result.Env["BASE"]; !ok || v != "value" {
+		t.Errorf("env should contain BASE=value, got %v", result.Env)
+	}
 }
 
 func TestResolveExtendsNoExtends(t *testing.T) {
@@ -138,5 +141,110 @@ func TestResolveExtendsNoExtends(t *testing.T) {
 
 	if result.Image != "test:latest" {
 		t.Errorf("expected image 'test:latest', got %v", result.Image)
+	}
+}
+
+func TestResolveExtendsPathTraversal(t *testing.T) {
+	dir := t.TempDir()
+	devcontainerDir := filepath.Join(dir, ".devcontainer")
+	os.MkdirAll(devcontainerDir, 0755)
+
+	// Create config that tries to escape
+	config := `{
+        "extends": "../../../etc/passwd"
+    }`
+	os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(config), 0644)
+
+	result, err := ParseDevcontainer(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	_, err = ResolveExtends(dir, result)
+	if err == nil {
+		t.Error("expected error for path traversal, got nil")
+	}
+}
+
+func TestResolveExtendsMultipleLevels(t *testing.T) {
+	dir := t.TempDir()
+	devcontainerDir := filepath.Join(dir, ".devcontainer")
+	os.MkdirAll(devcontainerDir, 0755)
+
+	// Create level 1 config
+	level1Config := `{
+        "image": "level1:latest",
+        "containerEnv": {"LEVEL": "1"}
+    }`
+	os.WriteFile(filepath.Join(devcontainerDir, "level1.json"), []byte(level1Config), 0644)
+
+	// Create level 2 config extending level1
+	level2Config := `{
+        "extends": "./level1.json",
+        "containerEnv": {"LEVEL": "2"}
+    }`
+	os.WriteFile(filepath.Join(devcontainerDir, "level2.json"), []byte(level2Config), 0644)
+
+	// Create main config extending level2
+	mainConfig := `{
+        "extends": "./level2.json",
+        "image": "main:latest"
+    }`
+	os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(mainConfig), 0644)
+
+	result, err := ParseDevcontainer(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	result, err = ResolveExtends(dir, result)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Should have main image
+	if result.Image != "main:latest" {
+		t.Errorf("expected image 'main:latest', got %v", result.Image)
+	}
+
+	// Should have merged env (level2 should override level1)
+	if result.Env == nil {
+		t.Fatal("env should not be nil")
+	}
+	if result.Env["LEVEL"] != "2" {
+		t.Errorf("expected LEVEL=2, got %v", result.Env["LEVEL"])
+	}
+}
+
+func TestResolveExtendsNestedPath(t *testing.T) {
+	dir := t.TempDir()
+	devcontainerDir := filepath.Join(dir, ".devcontainer")
+	os.MkdirAll(devcontainerDir, 0755)
+
+	// Create subdirectory with base config
+	subDir := filepath.Join(devcontainerDir, "nested")
+	os.MkdirAll(subDir, 0755)
+	baseConfig := `{"image": "nested-base:latest"}`
+	os.WriteFile(filepath.Join(subDir, "base.json"), []byte(baseConfig), 0644)
+
+	// Create main config extending nested path
+	config := `{
+        "extends": "./nested/base.json",
+        "image": "custom:latest"
+    }`
+	os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(config), 0644)
+
+	result, err := ParseDevcontainer(dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	result, err = ResolveExtends(dir, result)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Image != "custom:latest" {
+		t.Errorf("expected image 'custom:latest', got %v", result.Image)
 	}
 }

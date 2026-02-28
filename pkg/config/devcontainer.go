@@ -70,6 +70,13 @@ func ResolveExtends(dir string, config *DevcontainerConfig) (*DevcontainerConfig
 		fullPath += ".json"
 	}
 
+	// Clean and verify path stays within .devcontainer
+	cleanPath := filepath.Clean(fullPath)
+	devcontainerDir := filepath.Clean(filepath.Join(dir, ".devcontainer"))
+	if !strings.HasPrefix(cleanPath, devcontainerDir) {
+		return nil, fmt.Errorf("extends path escapes devcontainer directory: %s", fullPath)
+	}
+
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read extended config %s: %w", fullPath, err)
@@ -92,7 +99,7 @@ func ResolveExtends(dir string, config *DevcontainerConfig) (*DevcontainerConfig
 	// Recursively resolve extends
 	resolvedBase, err := ResolveExtends(dir, &base)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to resolve base extends: %w", err)
 	}
 	base = *resolvedBase
 
