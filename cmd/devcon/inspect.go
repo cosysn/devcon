@@ -1,6 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/devcon/cli/pkg/config"
+	"github.com/devcon/cli/pkg/feature"
 	"github.com/spf13/cobra"
 )
 
@@ -9,6 +14,53 @@ var inspectCmd = &cobra.Command{
 	Short: "Inspect parsed config and feature dependencies",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		dir := args[0]
+
+		// Validate directory
+		stat, err := os.Stat(dir)
+		if err != nil {
+			return fmt.Errorf("failed to access directory: %w", err)
+		}
+		if !stat.IsDir() {
+			return fmt.Errorf("path is not a directory: %s", dir)
+		}
+
+		// Parse config
+		cfg, err := config.ParseDevcontainer(dir)
+		if err != nil {
+			return fmt.Errorf("failed to parse config: %w", err)
+		}
+
+		cfg, err = config.ResolveExtends(dir, cfg)
+		if err != nil {
+			return fmt.Errorf("failed to resolve extends: %w", err)
+		}
+
+		// Resolve features
+		resolver := feature.NewResolver()
+		localFeatures, err := resolver.ResolveLocalFeatures(dir)
+		if err != nil {
+			return fmt.Errorf("failed to resolve local features: %w", err)
+		}
+
+		// Output
+		fmt.Println("=== Config ===")
+		fmt.Printf("Image: %s\n", cfg.Image)
+		fmt.Printf("Dockerfile: %s\n", cfg.Dockerfile)
+		fmt.Printf("Features: %v\n", cfg.Features)
+
+		fmt.Println("\n=== Local Features ===")
+		if len(localFeatures) == 0 {
+			fmt.Println("No local features found")
+		} else {
+			for id, f := range localFeatures {
+				fmt.Printf("- %s (version: %s)\n", id, f.Version)
+				if len(f.DependsOn) > 0 {
+					fmt.Printf("  dependsOn: %v\n", f.DependsOn)
+				}
+			}
+		}
+
 		return nil
 	},
 }
