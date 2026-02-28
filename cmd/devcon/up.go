@@ -51,6 +51,7 @@ var upCmd = &cobra.Command{
 
 		// Build first
 		spec := builder.Spec{
+			ContextDir: dir,
 			Image:      cfg.Image,
 			Dockerfile: cfg.Dockerfile,
 			Features:   cfg.Features,

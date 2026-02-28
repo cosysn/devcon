@@ -48,6 +48,11 @@ func ParseDevcontainer(dir string) (*DevcontainerConfig, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
+	// If Dockerfile is specified in build config, promote it to top-level
+	if config.Dockerfile == "" && config.Build != nil && config.Build.Dockerfile != "" {
+		config.Dockerfile = config.Build.Dockerfile
+	}
+
 	return &config, nil
 }
 
@@ -102,6 +107,11 @@ func ResolveExtends(dir string, config *DevcontainerConfig) (*DevcontainerConfig
 		return nil, fmt.Errorf("failed to resolve base extends: %w", err)
 	}
 	base = *resolvedBase
+
+	// If Dockerfile is specified in build config, promote it to top-level
+	if base.Dockerfile == "" && base.Build != nil && base.Build.Dockerfile != "" {
+		base.Dockerfile = base.Build.Dockerfile
+	}
 
 	// Merge: base -> config (config takes precedence)
 	if config.Image != "" {

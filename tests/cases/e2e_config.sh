@@ -54,7 +54,7 @@ fi
 TOTAL=$((TOTAL + 1))
 FIXTURE="$FIXTURES/devcontainer/image-only"
 OUTPUT=$(./devcon config "$FIXTURE" --output json 2>&1)
-if echo "$OUTPUT" | grep -q '"Image"'; then
+if echo "$OUTPUT" | grep -q '"image"'; then
     PASSED=$((PASSED + 1))
     echo -e "[${GREEN}TC_E2E016${NC}] 通过 - json 格式输出"
 else

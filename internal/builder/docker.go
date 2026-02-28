@@ -3,6 +3,7 @@ package builder
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -76,6 +77,12 @@ func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+
+	// Read response body to ensure build completes
+	_, err = io.Copy(io.Discard, resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read build response: %w", err)
+	}
 
 	// Note: In production, you'd parse the response to get the image ID
 	// For now, return the tag

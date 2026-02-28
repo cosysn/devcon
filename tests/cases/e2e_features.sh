@@ -52,11 +52,11 @@ else
     echo -e "[${RED}TC_E2E008${NC}] 失败 - 打包带依赖 feature"
 fi
 
-# TC_E2E009: publish 验证参数
+# TC_E2E009: publish 参数验证（缺少 --reg 参数应该失败）
 TOTAL=$((TOTAL + 1))
 FIXTURE="$FIXTURES/feature/simple"
-if ./devcon features publish "$FIXTURE" --reg "test.io/test" > /dev/null 2>&1; then
-    # 可能失败因为网络，但参数验证应该通过
+# 测试 --reg 参数验证（不提供 --reg 应该失败）
+if ./devcon features publish "$FIXTURE" 2>&1 | grep -q "\-\-reg is required"; then
     PASSED=$((PASSED + 1))
     echo -e "[${GREEN}TC_E2E009${NC}] 通过 - publish 参数验证"
 else
