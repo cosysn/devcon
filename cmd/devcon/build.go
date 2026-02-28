@@ -39,6 +39,11 @@ var buildCmd = &cobra.Command{
 			return fmt.Errorf("failed to resolve extends: %w", err)
 		}
 
+		// Resolve and validate features
+		if err := config.ResolveFeatures(dir, cfg.Features); err != nil {
+			return fmt.Errorf("failed to resolve features: %w", err)
+		}
+
 		// Validate we have either image or dockerfile
 		if cfg.Image == "" && cfg.Dockerfile == "" {
 			return fmt.Errorf("either image or dockerFile must be specified in devcontainer.json")

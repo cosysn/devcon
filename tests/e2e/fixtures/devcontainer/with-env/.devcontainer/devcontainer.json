@@ -1,0 +1,6 @@
+{
+    "image": "alpine:latest",
+    "containerEnv": {
+        "MY_VAR": "test-value"
+    }
+}

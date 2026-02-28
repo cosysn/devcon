@@ -17,6 +17,17 @@ import (
 )
 
 func PackageFeature(dir string, output string) error {
+	// Validate required files exist
+	featureJSON := filepath.Join(dir, "devcontainer-feature.json")
+	if _, err := os.Stat(featureJSON); os.IsNotExist(err) {
+		return fmt.Errorf("devcontainer-feature.json not found in %s", dir)
+	}
+
+	installScript := filepath.Join(dir, "install.sh")
+	if _, err := os.Stat(installScript); os.IsNotExist(err) {
+		return fmt.Errorf("install.sh not found in %s", dir)
+	}
+
 	outFile, err := os.Create(output)
 	if err != nil {
 		return err

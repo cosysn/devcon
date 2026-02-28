@@ -1,0 +1,7 @@
+{
+    "image": "alpine:latest",
+    "features": {
+        "feature-a": {},
+        "feature-b": {}
+    }
+}

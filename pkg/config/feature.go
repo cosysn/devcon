@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
 type Feature struct {
@@ -97,4 +98,51 @@ func TopologicalSort(features map[string]*FeatureDefinition) ([]string, error) {
 	}
 
 	return result, nil
+}
+
+// ResolveFeatures validates and resolves features from the devcontainer config.
+// It checks for local features and validates they exist.
+func ResolveFeatures(dir string, features map[string]interface{}) error {
+	if len(features) == 0 {
+		return nil
+	}
+
+	// Check both possible locations for features:
+	// 1. .devcontainer/features/<feature-id>/ (standard location)
+	// 2. features/<feature-id>/ (alternative location)
+	featuresDirs := []string{
+		filepath.Join(dir, ".devcontainer", "features"),
+		filepath.Join(dir, "features"),
+	}
+
+	for featureID := range features {
+		// Check if it's an OCI reference (contains / or :)
+		if isOCIReference(featureID) {
+			// For OCI references, we can't validate locally - assume valid
+			continue
+		}
+
+		// Check local features in both possible locations
+		found := false
+		for _, featuresDir := range featuresDirs {
+			featurePath := filepath.Join(featuresDir, featureID)
+			if _, err := os.Stat(featurePath); err == nil {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return fmt.Errorf("feature %q not found in .devcontainer/features/ or features/", featureID)
+		}
+	}
+
+	return nil
+}
+
+// isOCIReference checks if a string looks like an OCI registry reference
+func isOCIReference(s string) bool {
+	// OCI references typically contain / or : (for tag)
+	// Examples: ghcr.io/user/feature, localhost:5000/feature:v1
+	return strings.Contains(s, "/") || strings.Contains(s, ":")
 }
