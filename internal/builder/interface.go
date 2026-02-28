@@ -5,6 +5,7 @@ import (
 )
 
 type Spec struct {
+	ContextDir string
 	Image      string
 	Dockerfile string
 	Features   map[string]interface{}

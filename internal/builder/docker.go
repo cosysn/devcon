@@ -9,6 +9,8 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/moby/go-archive"
+	"github.com/moby/go-archive/compression"
 )
 
 type DockerBuilder struct {
@@ -16,7 +18,10 @@ type DockerBuilder struct {
 }
 
 func NewDockerBuilder() (*DockerBuilder, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.NewClientWithOpts(
+		client.FromEnv,
+		client.WithAPIVersionNegotiation(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -30,24 +35,35 @@ func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 	}
 
 	// Determine build context
-	contextPath := "."
+	contextPath := spec.ContextDir
+	if contextPath == "" {
+		contextPath = "."
+	}
 	dockerfilePath := "Dockerfile"
 
 	if spec.Dockerfile != "" {
-		contextPath = filepath.Dir(spec.Dockerfile)
-		dockerfilePath = filepath.Base(spec.Dockerfile)
+		// If Dockerfile is an absolute path or starts with ., use as-is relative to ContextDir
+		if filepath.IsAbs(spec.Dockerfile) || spec.Dockerfile[0] == '.' {
+			contextPath = filepath.Join(spec.ContextDir, filepath.Dir(spec.Dockerfile))
+			dockerfilePath = filepath.Base(spec.Dockerfile)
+		} else {
+			// Simple filename, use ContextDir
+			contextPath = spec.ContextDir
+			dockerfilePath = spec.Dockerfile
+		}
 	}
 
 	// Read dockerfile content
-	_, err := os.ReadFile(filepath.Join(contextPath, dockerfilePath))
+	dockerfileFullPath := filepath.Join(contextPath, dockerfilePath)
+	_, err := os.ReadFile(dockerfileFullPath)
 	if err != nil {
 		return "", err
 	}
 
-	// Build
-	buildContext, err := os.Open(contextPath)
+	// Create build context as tar archive
+	buildContext, err := archive.Tar(contextPath, compression.None)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create build context: %w", err)
 	}
 	defer buildContext.Close()
 

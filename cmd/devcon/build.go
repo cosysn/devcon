@@ -52,6 +52,7 @@ var buildCmd = &cobra.Command{
 
 		// Build
 		spec := builder.Spec{
+			ContextDir: dir,
 			Image:      cfg.Image,
 			Dockerfile: cfg.Dockerfile,
 			Features:   cfg.Features,
