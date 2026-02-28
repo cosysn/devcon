@@ -1,4 +1,4 @@
-.PHONY: test test-run test-unit test-e2e test-e2e-build test-e2e-up test-e2e-features test-e2e-inspect test-e2e-config help
+.PHONY: test test-run test-unit test-e2e test-e2e-build test-e2e-up test-e2e-features test-e2e-inspect test-e2e-config test-e2e-full-flow help
 
 help:
 	@echo "可用命令:"
@@ -11,6 +11,7 @@ help:
 	@echo "  make test-e2e-features - 仅运行 features E2E 测试"
 	@echo "  make test-e2e-inspect - 仅运行 inspect E2E 测试"
 	@echo "  make test-e2e-config  - 仅运行 config E2E 测试"
+	@echo "  make test-e2e-full-flow - 运行完整流程测试 (镜像仓库 + feature + build)"
 
 test: test-unit test-e2e
 
@@ -36,3 +37,6 @@ test-e2e-inspect:
 
 test-e2e-config:
 	@./tests/cases/e2e_config.sh
+
+test-e2e-full-flow:
+	@./tests/cases/e2e_full_flow.sh
