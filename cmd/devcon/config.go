@@ -42,7 +42,9 @@ var configCmd = &cobra.Command{
 		if output == "json" {
 			encoder := json.NewEncoder(os.Stdout)
 			encoder.SetIndent("", "  ")
-			encoder.Encode(cfg)
+			if err := encoder.Encode(cfg); err != nil {
+				return fmt.Errorf("failed to encode config: %w", err)
+			}
 		} else {
 			fmt.Printf("Image: %s\n", cfg.Image)
 			fmt.Printf("Dockerfile: %s\n", cfg.Dockerfile)

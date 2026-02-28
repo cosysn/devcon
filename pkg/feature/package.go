@@ -19,13 +19,25 @@ func PackageFeature(dir string, output string) error {
 	if err != nil {
 		return err
 	}
-	defer outFile.Close()
+	defer func() {
+		if err := outFile.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to close outFile: %v\n", err)
+		}
+	}()
 
 	gw := gzip.NewWriter(outFile)
-	defer gw.Close()
+	defer func() {
+		if err := gw.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to close gzip writer: %v\n", err)
+		}
+	}()
 
 	tw := tar.NewWriter(gw)
-	defer tw.Close()
+	defer func() {
+		if err := tw.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to close tar writer: %v\n", err)
+		}
+	}()
 
 	files := []string{
 		"devcontainer-feature.json",
@@ -51,7 +63,11 @@ func addFileToTar(tw *tar.Writer, path string, name string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to close file: %v\n", err)
+		}
+	}()
 
 	info, err := file.Stat()
 	if err != nil {
@@ -80,8 +96,14 @@ func PublishFeature(ctx context.Context, dir string, ref string, opts ...remote.
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
 	tmpPath := tmpFile.Name()
-	tmpFile.Close()
-	defer os.Remove(tmpPath)
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+	defer func() {
+		if err := os.Remove(tmpPath); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to remove temp file: %v\n", err)
+		}
+	}()
 
 	// Package the feature
 	if err := PackageFeature(dir, tmpPath); err != nil {

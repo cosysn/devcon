@@ -66,8 +66,14 @@ func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create build context: %w", err)
 	}
-	defer buildContext.Close()
+	defer func() {
+		if err := buildContext.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to close build context: %v\n", err)
+		}
+	}()
 
+	// Use the new dockerbuild.ImageBuildOptions instead of deprecated types.ImageBuildOptions
+	//nolint:staticcheck // SA1019: types.ImageBuildOptions is deprecated
 	resp, err := b.client.ImageBuild(ctx, buildContext, types.ImageBuildOptions{
 		Dockerfile: dockerfilePath,
 		Tags:       []string{"devcon-build:latest"},
@@ -76,7 +82,11 @@ func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to close response body: %v\n", err)
+		}
+	}()
 
 	// Read response body to ensure build completes
 	_, err = io.Copy(io.Discard, resp.Body)

@@ -38,8 +38,12 @@ func TestParseDevcontainer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()
 			devcontainerDir := filepath.Join(dir, ".devcontainer")
-			os.MkdirAll(devcontainerDir, 0755)
-			os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(tt.config), 0644)
+			if err := os.MkdirAll(devcontainerDir, 0755); err != nil {
+				t.Fatalf("failed to create dir: %v", err)
+			}
+			if err := os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(tt.config), 0644); err != nil {
+				t.Fatalf("failed to write file: %v", err)
+			}
 
 			_, err := ParseDevcontainer(dir)
 			if tt.wantErr && err == nil {
@@ -62,7 +66,9 @@ func TestParseDevcontainerNotFound(t *testing.T) {
 func TestResolveExtends(t *testing.T) {
 	dir := t.TempDir()
 	devcontainerDir := filepath.Join(dir, ".devcontainer")
-	os.MkdirAll(devcontainerDir, 0755)
+	if err := os.MkdirAll(devcontainerDir, 0755); err != nil {
+		t.Fatalf("failed to create dir: %v", err)
+	}
 
 	// Create base config
 	baseConfig := `{
@@ -74,7 +80,9 @@ func TestResolveExtends(t *testing.T) {
             "BASE": "value"
         }
     }`
-	os.WriteFile(filepath.Join(devcontainerDir, "base.json"), []byte(baseConfig), 0644)
+	if err := os.WriteFile(filepath.Join(devcontainerDir, "base.json"), []byte(baseConfig), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
 
 	// Create extending config
 	config := `{
@@ -84,7 +92,9 @@ func TestResolveExtends(t *testing.T) {
             "node": {}
         }
     }`
-	os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(config), 0644)
+	if err := os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(config), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
 
 	result, err := ParseDevcontainer(dir)
 	if err != nil {
@@ -124,10 +134,14 @@ func TestResolveExtends(t *testing.T) {
 func TestResolveExtendsNoExtends(t *testing.T) {
 	dir := t.TempDir()
 	devcontainerDir := filepath.Join(dir, ".devcontainer")
-	os.MkdirAll(devcontainerDir, 0755)
+	if err := os.MkdirAll(devcontainerDir, 0755); err != nil {
+		t.Fatalf("failed to create dir: %v", err)
+	}
 
 	config := `{"image": "test:latest"}`
-	os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(config), 0644)
+	if err := os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(config), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
 
 	result, err := ParseDevcontainer(dir)
 	if err != nil {
@@ -147,13 +161,17 @@ func TestResolveExtendsNoExtends(t *testing.T) {
 func TestResolveExtendsPathTraversal(t *testing.T) {
 	dir := t.TempDir()
 	devcontainerDir := filepath.Join(dir, ".devcontainer")
-	os.MkdirAll(devcontainerDir, 0755)
+	if err := os.MkdirAll(devcontainerDir, 0755); err != nil {
+		t.Fatalf("failed to create dir: %v", err)
+	}
 
 	// Create config that tries to escape
 	config := `{
         "extends": "../../../etc/passwd"
     }`
-	os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(config), 0644)
+	if err := os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(config), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
 
 	result, err := ParseDevcontainer(dir)
 	if err != nil {
@@ -169,28 +187,36 @@ func TestResolveExtendsPathTraversal(t *testing.T) {
 func TestResolveExtendsMultipleLevels(t *testing.T) {
 	dir := t.TempDir()
 	devcontainerDir := filepath.Join(dir, ".devcontainer")
-	os.MkdirAll(devcontainerDir, 0755)
+	if err := os.MkdirAll(devcontainerDir, 0755); err != nil {
+		t.Fatalf("failed to create dir: %v", err)
+	}
 
 	// Create level 1 config
 	level1Config := `{
         "image": "level1:latest",
         "containerEnv": {"LEVEL": "1"}
     }`
-	os.WriteFile(filepath.Join(devcontainerDir, "level1.json"), []byte(level1Config), 0644)
+	if err := os.WriteFile(filepath.Join(devcontainerDir, "level1.json"), []byte(level1Config), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
 
 	// Create level 2 config extending level1
 	level2Config := `{
         "extends": "./level1.json",
         "containerEnv": {"LEVEL": "2"}
     }`
-	os.WriteFile(filepath.Join(devcontainerDir, "level2.json"), []byte(level2Config), 0644)
+	if err := os.WriteFile(filepath.Join(devcontainerDir, "level2.json"), []byte(level2Config), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
 
 	// Create main config extending level2
 	mainConfig := `{
         "extends": "./level2.json",
         "image": "main:latest"
     }`
-	os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(mainConfig), 0644)
+	if err := os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(mainConfig), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
 
 	result, err := ParseDevcontainer(dir)
 	if err != nil {
@@ -219,20 +245,28 @@ func TestResolveExtendsMultipleLevels(t *testing.T) {
 func TestResolveExtendsNestedPath(t *testing.T) {
 	dir := t.TempDir()
 	devcontainerDir := filepath.Join(dir, ".devcontainer")
-	os.MkdirAll(devcontainerDir, 0755)
+	if err := os.MkdirAll(devcontainerDir, 0755); err != nil {
+		t.Fatalf("failed to create dir: %v", err)
+	}
 
 	// Create subdirectory with base config
 	subDir := filepath.Join(devcontainerDir, "nested")
-	os.MkdirAll(subDir, 0755)
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("failed to create dir: %v", err)
+	}
 	baseConfig := `{"image": "nested-base:latest"}`
-	os.WriteFile(filepath.Join(subDir, "base.json"), []byte(baseConfig), 0644)
+	if err := os.WriteFile(filepath.Join(subDir, "base.json"), []byte(baseConfig), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
 
 	// Create main config extending nested path
 	config := `{
         "extends": "./nested/base.json",
         "image": "custom:latest"
     }`
-	os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(config), 0644)
+	if err := os.WriteFile(filepath.Join(devcontainerDir, "devcontainer.json"), []byte(config), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
 
 	result, err := ParseDevcontainer(dir)
 	if err != nil {

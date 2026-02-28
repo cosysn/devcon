@@ -22,7 +22,9 @@ func TestParseFeatureDefinition(t *testing.T) {
         }
     }`
 
-	os.WriteFile(filepath.Join(dir, "devcontainer-feature.json"), []byte(config), 0644)
+	if err := os.WriteFile(filepath.Join(dir, "devcontainer-feature.json"), []byte(config), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
 
 	result, err := ParseFeatureDefinition(dir)
 	if err != nil {

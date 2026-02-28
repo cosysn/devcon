@@ -10,8 +10,12 @@ func TestPackageFeature(t *testing.T) {
 	dir := t.TempDir()
 
 	// Create test files
-	os.WriteFile(filepath.Join(dir, "devcontainer-feature.json"), []byte(`{"id": "test"}`), 0644)
-	os.WriteFile(filepath.Join(dir, "install.sh"), []byte("#!/bin/bash\necho hello"), 0755)
+	if err := os.WriteFile(filepath.Join(dir, "devcontainer-feature.json"), []byte(`{"id": "test"}`), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "install.sh"), []byte("#!/bin/bash\necho hello"), 0755); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
 
 	output := filepath.Join(t.TempDir(), "output.tar.gz")
 
