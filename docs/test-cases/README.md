@@ -2,6 +2,8 @@
 
 ## 摘要列表
 
+### 单元测试用例
+
 | 编号 | 测试文件 | 用例名称 | 测试内容 |
 |------|---------|---------|---------|
 | TC001 | jsonc_test.go | basic object with comment | 解析基本 JSON 对象 |
@@ -26,9 +28,16 @@
 | TC020 | feature_test.go | topological sort | 拓扑排序 |
 | TC021 | package_test.go | package feature | 打包 feature 为 tar.gz |
 
+### E2E 测试用例
+
+| 编号 | 用例名称 | 测试内容 |
+|------|---------|---------|
+| TC_E2E001 | full-flow-registry-feature-build | 完整流程：镜像仓库+feature+构建 |
+
 ## 详细文档
 
 - [JSONC 测试用例](./jsonc-cases.md)
 - [Devcontainer 测试用例](./devcontainer-cases.md)
 - [Feature 测试用例](./feature-cases.md)
 - [Package 测试用例](./package-cases.md)
+- [E2E 测试用例](./e2e-cases.md)

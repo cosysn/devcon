@@ -39,4 +39,4 @@ test-e2e-config:
 	@./tests/cases/e2e_config.sh
 
 test-e2e-full-flow:
-	@./tests/cases/e2e_full_flow.sh
+	@./tests/cases/e2e_tc001_full_flow.sh
