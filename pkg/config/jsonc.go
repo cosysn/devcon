@@ -13,8 +13,8 @@ func ParseJSONC(input string) (map[string]interface{}, error) {
 	}
 
 	// Standardize converts HuJSON to standard JSON (strips comments, adds commas)
-	// It mutates the AST in place, so we need to pass a pointer
-	(&ast).Standardize()
+	// It mutates the AST in place
+	ast.Standardize()
 
 	// Pack the AST to get standard JSON bytes
 	stdJSON := ast.Pack()
