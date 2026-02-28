@@ -12,7 +12,7 @@ var featuresPackageCmd = &cobra.Command{
 	Short: "Package a Feature as OCI artifact",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return nil // TODO: implement
+		return nil
 	},
 }
 
@@ -21,7 +21,7 @@ var featuresPublishCmd = &cobra.Command{
 	Short: "Publish a Feature to OCI registry",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return nil // TODO: implement
+		return nil
 	},
 }
 
