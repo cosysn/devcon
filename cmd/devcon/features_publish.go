@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,18 +10,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var featuresCmd = &cobra.Command{
-	Use:   "features",
-	Short: "Manage devcontainer features",
-}
-
-var featuresPackageCmd = &cobra.Command{
-	Use:   "package <dir>",
-	Short: "Package a Feature as OCI artifact",
+var featuresPublishCmd = &cobra.Command{
+	Use:   "publish <dir>",
+	Short: "Publish a Feature to OCI registry",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
-		output, _ := cmd.Flags().GetString("output")
+		reg, _ := cmd.Flags().GetString("reg")
+
+		if reg == "" {
+			return fmt.Errorf("--reg is required")
+		}
 
 		// Validate input directory
 		stat, err := os.Stat(dir)
@@ -37,20 +37,17 @@ var featuresPackageCmd = &cobra.Command{
 			return fmt.Errorf("devcontainer-feature.json not found in %s", dir)
 		}
 
-		if output == "" {
-			output = filepath.Join(dir, "feature.tar.gz")
+		ctx := context.Background()
+		if err := feature.PublishFeature(ctx, dir, reg); err != nil {
+			return fmt.Errorf("failed to publish feature: %w", err)
 		}
 
-		if err := feature.PackageFeature(dir, output); err != nil {
-			return fmt.Errorf("failed to package feature: %w", err)
-		}
-
-		fmt.Println("Feature packaged:", output)
+		fmt.Println("Feature published:", reg)
 		return nil
 	},
 }
 
 func init() {
-	featuresPackageCmd.Flags().String("output", "", "Output path")
-	featuresCmd.AddCommand(featuresPackageCmd)
+	featuresPublishCmd.Flags().String("reg", "", "Registry URL (e.g., ghcr.io/user/feature)")
+	featuresCmd.AddCommand(featuresPublishCmd)
 }
