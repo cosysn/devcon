@@ -1,20 +1,20 @@
 package builder
 
 import (
-    "context"
+	"context"
 )
 
 type Spec struct {
-    Image         string
-    Dockerfile    string
-    Features      map[string]interface{}
-    Env           map[string]string
-    Mounts        []string
-    Ports         []int
-    RemoteUser    string
+	Image      string
+	Dockerfile string
+	Features   map[string]interface{}
+	Env        map[string]string
+	Mounts     []string
+	Ports      []int
+	RemoteUser string
 }
 
 type Builder interface {
-    Build(ctx context.Context, spec Spec) (string, error)
-    Up(ctx context.Context, spec Spec) error
+	Build(ctx context.Context, spec Spec) (string, error)
+	Up(ctx context.Context, spec Spec) error
 }
