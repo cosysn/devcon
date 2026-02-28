@@ -24,6 +24,11 @@ func NewDockerBuilder() (*DockerBuilder, error) {
 }
 
 func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
+	// If no Dockerfile is specified but we have an image, just return the image name
+	if spec.Dockerfile == "" && spec.Image != "" {
+		return spec.Image, nil
+	}
+
 	// Determine build context
 	contextPath := "."
 	dockerfilePath := "Dockerfile"
