@@ -223,7 +223,7 @@ func (j *JSONOutput) printJSON(resp JSONResponse) {
 	resp.Timestamp = j.timestamp()
 	resp.Command = j.cmdName
 	data, _ := json.MarshalIndent(resp, "", "  ")
-	fmt.Fprintln(j.out, string(data))
+	_, _ = fmt.Fprintln(j.out, string(data))
 }
 
 // Print outputs a message
