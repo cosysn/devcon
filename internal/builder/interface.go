@@ -5,17 +5,18 @@ import (
 )
 
 type Spec struct {
-	ContextDir        string
-	Image            string
-	Dockerfile        string
-	Features         map[string]interface{}
-	Env              map[string]string
-	Mounts           []string
-	Ports            []int
-	RemoteUser       string
-	OnCreateCommand  string
-	PostCreateCommand string
-	PostStartCommand string
+	ContextDir         string
+	Image              string
+	Dockerfile         string
+	Features          map[string]interface{}
+	Env                map[string]string
+	Mounts             []string
+	Ports              []int
+	RemoteUser         string
+	Privileged         bool
+	OnCreateCommand    string
+	PostCreateCommand  string
+	PostStartCommand   string
 }
 
 type Builder interface {

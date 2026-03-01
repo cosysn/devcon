@@ -185,6 +185,7 @@ var upCmd = &cobra.Command{
 			Features:          cfg.Features,
 			Env:               cfg.ContainerEnv,
 			Mounts:            cfg.Mounts,
+			Privileged:        cfg.Privileged != nil && *cfg.Privileged,
 			OnCreateCommand:   onCreateCmd,
 			PostCreateCommand: postCreateCmd,
 			PostStartCommand:  postStartCmd,

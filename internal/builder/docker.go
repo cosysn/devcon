@@ -169,15 +169,16 @@ func (b *DockerBuilder) Up(ctx context.Context, spec Spec) error {
 	// Use /bin/sh as default command to keep container running
 	containerCmd := []string{"/bin/sh", "-c", "while true; do sleep 3600; done"}
 
-	// Prepare host config with mounts
+	// Prepare host config with mounts and privileges
 	var hostConfig *container.HostConfig
-	if len(spec.Mounts) > 0 {
+	if len(spec.Mounts) > 0 || spec.Privileged {
 		mounts, err := parseMounts(spec.Mounts)
 		if err != nil {
 			return fmt.Errorf("failed to parse mounts: %w", err)
 		}
 		hostConfig = &container.HostConfig{
-			Mounts: mounts,
+			Mounts:     mounts,
+			Privileged: spec.Privileged,
 		}
 	}
 
