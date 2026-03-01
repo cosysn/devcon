@@ -31,3 +31,7 @@ go.work.sum
 # .idea/
 # .vscode/
 devcon
+
+# Generated devcontainer files
+.devcontainer/generated.Dockerfile
+Dockerfile.with-features
