@@ -103,18 +103,15 @@ func addFileToTar(tw *tar.Writer, path string, name string) error {
 
 // PublishFeature packages and publishes a Feature to OCI registry
 func PublishFeature(ctx context.Context, dir string, ref string, opts ...remote.Option) error {
-	// Create temp file for tarball
-	tmpFile, err := os.CreateTemp("", "feature-*.tar.gz")
+	// Create temp directory for tarball in system temp dir
+	tmpDir, err := os.MkdirTemp(os.TempDir(), "feature-")
 	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
+		return fmt.Errorf("failed to create temp directory: %w", err)
 	}
-	tmpPath := tmpFile.Name()
-	if err := tmpFile.Close(); err != nil {
-		return fmt.Errorf("failed to close temp file: %w", err)
-	}
+	tmpPath := tmpDir + "/bundle.tar.gz"
 	defer func() {
-		if err := os.Remove(tmpPath); err != nil {
-			fmt.Fprintf(os.Stderr, "warning: failed to remove temp file: %v\n", err)
+		if err := os.RemoveAll(tmpDir); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to remove temp directory: %v\n", err)
 		}
 	}()
 

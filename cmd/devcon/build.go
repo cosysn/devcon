@@ -96,6 +96,10 @@ var buildCmd = &cobra.Command{
 
 		// Resolve and download features if any are specified
 		var resolvedFeatures map[string]*feature.ResolvedFeature
+		var buildTempDir string
+		var contextDockerfile string
+		var cleanupTempDir func()
+
 		if len(cfg.Features) > 0 {
 			p := progress.NewSpinner("Resolving features")
 			p.Start()
@@ -134,27 +138,49 @@ var buildCmd = &cobra.Command{
 			// Generate Dockerfile with features if we have features and an image
 			if cfg.Image != "" && len(resolvedFeatures) > 0 {
 				out.Verbose("Generating Dockerfile with features...")
+
+				// Create temp directory for build files
+				buildTempDir, err = os.MkdirTemp(os.TempDir(), "devcon-build-")
+				if err != nil {
+					return fmt.Errorf("failed to create temp directory: %w", err)
+				}
+				cleanupTempDir = func() {
+					if err := os.RemoveAll(buildTempDir); err != nil {
+						fmt.Fprintf(os.Stderr, "warning: failed to remove temp directory: %v\n", err)
+					}
+				}
+
 				dockerfileContent, err := feature.GenerateDockerfileWithUser(cfg.Image, resolvedFeatures, cfg.RemoteUser, cfg.WorkspaceFolder)
 				if err != nil {
+					cleanupTempDir()
 					return fmt.Errorf("failed to generate Dockerfile: %w", err)
 				}
 
-				// Write generated Dockerfile to .devcontainer directory
-				generatedDockerfile := filepath.Join(dir, ".devcontainer", "generated.Dockerfile")
+				// Write generated Dockerfile to temp directory
+				generatedDockerfile := filepath.Join(buildTempDir, "generated.Dockerfile")
 				if err := os.WriteFile(generatedDockerfile, []byte(dockerfileContent), 0644); err != nil {
+					cleanupTempDir()
 					return fmt.Errorf("failed to write generated Dockerfile: %w", err)
 				}
 				out.Verbosef("Written: %s", generatedDockerfile)
 
 				// Create a combined Dockerfile that uses the base and includes features
-				combinedDockerfile := filepath.Join(dir, "Dockerfile.with-features")
+				combinedDockerfile := filepath.Join(buildTempDir, "Dockerfile.with-features")
 				combinedContent := fmt.Sprintf("FROM %s\n\n", cfg.Image) + dockerfileContent
 				if err := os.WriteFile(combinedDockerfile, []byte(combinedContent), 0644); err != nil {
+					cleanupTempDir()
 					return fmt.Errorf("failed to write combined Dockerfile: %w", err)
 				}
 				out.Verbosef("Written: %s", combinedDockerfile)
 
-				// Use the combined Dockerfile for build
+				// Copy Dockerfile to build context for Docker to access
+				contextDockerfile = filepath.Join(dir, "Dockerfile.with-features")
+				if err := os.WriteFile(contextDockerfile, []byte(combinedContent), 0644); err != nil {
+					cleanupTempDir()
+					return fmt.Errorf("failed to write Dockerfile to context: %w", err)
+				}
+
+				// Use the combined Dockerfile for build (in build context)
 				cfg.Dockerfile = "Dockerfile.with-features"
 				cfg.Image = "" // Use Dockerfile, not image directly
 			}
@@ -195,6 +221,17 @@ var buildCmd = &cobra.Command{
 		out.Verbose("Starting Docker build...")
 
 		imageID, err := b.Build(context.Background(), spec)
+
+		// Clean up temp directory and context Dockerfile
+		if cleanupTempDir != nil {
+			cleanupTempDir()
+		}
+		if contextDockerfile != "" {
+			if err := os.Remove(contextDockerfile); err != nil {
+				fmt.Fprintf(os.Stderr, "warning: failed to remove context Dockerfile: %v\n", err)
+			}
+		}
+
 		if err != nil {
 			p.Stop("failed")
 			return errors.NewBuildFailedError(err)
