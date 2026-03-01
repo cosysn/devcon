@@ -1,12 +1,17 @@
 {
+  "name": "devcon-development",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-  "user": "vscode",
-  "workspace": "/home/vscode/workspace",
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "privileged": true,
   "features": {
-    "docker-in-docker": {},
-    "git": {},
-    "go": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/go:1": {}
   },
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer,target=/.devcontainer,type=bind"
+  ],
   "customizations": {
     "vscode": {
       "extensions": [
@@ -20,5 +25,5 @@
       }
     }
   },
-  "postCreateCommand": "go mod download"
+  "postCreateCommand": ["bash /.devcontainer/post_create.sh"],
 }

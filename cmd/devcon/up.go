@@ -68,8 +68,8 @@ var upCmd = &cobra.Command{
 		if len(cfg.Features) > 0 {
 			out.Verbosef("  Features: %v", cfg.Features)
 		}
-		if len(cfg.Env) > 0 {
-			out.Verbosef("  Environment: %v", cfg.Env)
+		if len(cfg.ContainerEnv) > 0 {
+			out.Verbosef("  Environment: %v", cfg.ContainerEnv)
 		}
 
 		// Resolve extends
@@ -173,15 +173,21 @@ var upCmd = &cobra.Command{
 		}
 
 		// Build first
+		// Convert lifecycle commands to strings for backward compatibility
+		onCreateCmd := cfg.OnCreateCommand.ToString()
+		postCreateCmd := cfg.PostCreateCommand.ToString()
+		postStartCmd := cfg.PostStartCommand.ToString()
+
 		spec := builder.Spec{
-			ContextDir:        dir,
-			Image:            cfg.Image,
-			Dockerfile:        cfg.Dockerfile,
-			Features:         cfg.Features,
-			Env:              cfg.Env,
-			OnCreateCommand:  cfg.OnCreateCommand,
-			PostCreateCommand: cfg.PostCreateCommand,
-			PostStartCommand: cfg.PostStartCommand,
+			ContextDir:         dir,
+			Image:             cfg.Image,
+			Dockerfile:         cfg.Dockerfile,
+			Features:          cfg.Features,
+			Env:               cfg.ContainerEnv,
+			Mounts:            cfg.Mounts,
+			OnCreateCommand:   onCreateCmd,
+			PostCreateCommand: postCreateCmd,
+			PostStartCommand:  postStartCmd,
 		}
 
 		out.Verbosef("Build context: %s", spec.ContextDir)

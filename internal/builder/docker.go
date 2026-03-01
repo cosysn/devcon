@@ -12,6 +12,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/moby/go-archive"
 	"github.com/moby/go-archive/compression"
@@ -167,13 +168,26 @@ func (b *DockerBuilder) Up(ctx context.Context, spec Spec) error {
 	// Create and start container
 	// Use /bin/sh as default command to keep container running
 	containerCmd := []string{"/bin/sh", "-c", "while true; do sleep 3600; done"}
+
+	// Prepare host config with mounts
+	var hostConfig *container.HostConfig
+	if len(spec.Mounts) > 0 {
+		mounts, err := parseMounts(spec.Mounts)
+		if err != nil {
+			return fmt.Errorf("failed to parse mounts: %w", err)
+		}
+		hostConfig = &container.HostConfig{
+			Mounts: mounts,
+		}
+	}
+
 	resp, err := b.client.ContainerCreate(ctx, &container.Config{
 		Image:        spec.Image,
 		Env:          envToSlice(spec.Env),
 		Cmd:          containerCmd,
 		Tty:          true,
 		AttachStdin:  true,
-	}, nil, nil, nil, "")
+	}, hostConfig, nil, nil, "")
 	if err != nil {
 		return err
 	}
@@ -217,4 +231,38 @@ func envToSlice(env map[string]string) []string {
 		result = append(result, k+"="+v)
 	}
 	return result
+}
+
+// parseMounts converts devcontainer mount strings to Docker mount types
+// Format: "source=<path>,target=<path>,type=<type>"
+// Example: "source=${localWorkspaceFolder}/.devcontainer,target=/.devcontainer,type=bind"
+func parseMounts(mounts []string) ([]mount.Mount, error) {
+	result := make([]mount.Mount, 0, len(mounts))
+	for _, m := range mounts {
+		parts := strings.Split(m, ",")
+		var src, target, mtype string
+		for _, part := range parts {
+			kv := strings.SplitN(part, "=", 2)
+			if len(kv) != 2 {
+				continue
+			}
+			switch kv[0] {
+			case "source":
+				src = kv[1]
+			case "target":
+				target = kv[1]
+			case "type":
+				mtype = kv[1]
+			}
+		}
+		if src == "" || target == "" {
+			return nil, fmt.Errorf("invalid mount format: %s", m)
+		}
+		result = append(result, mount.Mount{
+			Type:   mount.Type(mtype),
+			Source: src,
+			Target: target,
+		})
+	}
+	return result, nil
 }
