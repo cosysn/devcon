@@ -12,6 +12,8 @@
   "mounts": [
     "source=${localWorkspaceFolder}/.devcontainer,target=/.devcontainer,type=bind"
   ],
+  "postCreateCommand": ["bash /.devcontainer/post_create.sh"],
+  "postStartCommand": ["dockerd > /var/log/dockerd.log 2>&1 &"],
   "customizations": {
     "vscode": {
       "extensions": [
@@ -24,6 +26,5 @@
         "editor.formatOnSave": true
       }
     }
-  },
-  "postCreateCommand": ["bash /.devcontainer/post_create.sh"],
+  }
 }
