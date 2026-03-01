@@ -123,7 +123,7 @@ func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 		if err := json.Unmarshal([]byte(line), &buildLog); err == nil {
 			// Extract stream message
 			if stream, ok := buildLog["stream"]; ok {
-				b.log(strings.TrimSpace(stream.(string)))
+				b.log("%s", strings.TrimSpace(stream.(string)))
 			} else if aux, ok := buildLog["aux"]; ok {
 				// This typically contains the final image ID
 				b.log("Build completed: %v", aux)
