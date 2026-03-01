@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/docker/docker/api/types"
@@ -100,13 +101,21 @@ func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 }
 
 func (b *DockerBuilder) Up(ctx context.Context, spec Spec) error {
+	// Execute onCreateCommand before container starts (during creation)
+	if spec.OnCreateCommand != "" {
+		fmt.Println("Executing onCreateCommand:", spec.OnCreateCommand)
+		if err := b.execInContainer(ctx, spec.Image, spec.OnCreateCommand); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: onCreateCommand failed: %v\n", err)
+		}
+	}
+
 	// Create and start container
 	// Use /bin/sh as default command to keep container running
-	cmd := []string{"/bin/sh", "-c", "while true; do sleep 3600; done"}
+	containerCmd := []string{"/bin/sh", "-c", "while true; do sleep 3600; done"}
 	resp, err := b.client.ContainerCreate(ctx, &container.Config{
 		Image:        spec.Image,
 		Env:          envToSlice(spec.Env),
-		Cmd:          cmd,
+		Cmd:          containerCmd,
 		Tty:          true,
 		AttachStdin:  true,
 	}, nil, nil, nil, "")
@@ -118,8 +127,33 @@ func (b *DockerBuilder) Up(ctx context.Context, spec Spec) error {
 		return err
 	}
 
+	// Execute postStartCommand after container starts
+	if spec.PostStartCommand != "" {
+		fmt.Println("Executing postStartCommand:", spec.PostStartCommand)
+		if err := b.execInContainer(ctx, resp.ID, spec.PostStartCommand); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: postStartCommand failed: %v\n", err)
+		}
+	}
+
+	// Execute postCreateCommand after container starts
+	if spec.PostCreateCommand != "" {
+		fmt.Println("Executing postCreateCommand:", spec.PostCreateCommand)
+		if err := b.execInContainer(ctx, resp.ID, spec.PostCreateCommand); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: postCreateCommand failed: %v\n", err)
+		}
+	}
+
 	fmt.Println("Container started:", resp.ID)
 	return nil
+}
+
+// execInContainer executes a command inside a container
+func (b *DockerBuilder) execInContainer(ctx context.Context, containerID string, command string) error {
+	// Use docker exec
+	cmd := exec.CommandContext(ctx, "docker", "exec", containerID, "sh", "-c", command)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func envToSlice(env map[string]string) []string {

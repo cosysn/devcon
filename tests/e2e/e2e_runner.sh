@@ -64,6 +64,7 @@ ALL_CASES=(
     "E2E-033:error_registry_auth:e2e_033_error_registry_auth.sh"
     "E2E-034:help_all_commands:e2e_034_help_all_commands.sh"
     "E2E-035:build_with_remote_features:e2e_035_build_with_remote_features.sh"
+    "E2E-036:up_with_postcreate_command:e2e_036_up_with_postcreate_command.sh"
 )
 
 show_help() {

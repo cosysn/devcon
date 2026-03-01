@@ -10,15 +10,18 @@ import (
 
 // DevcontainerConfig represents the devcontainer.json configuration
 type DevcontainerConfig struct {
-	Image         string                 `json:"image,omitempty"`
-	Dockerfile    string                 `json:"dockerFile,omitempty"`
-	Build         *BuildConfig           `json:"build,omitempty"`
-	Features      map[string]interface{} `json:"features,omitempty"`
-	Env           map[string]string      `json:"containerEnv,omitempty"`
-	Mounts        []string               `json:"mounts,omitempty"`
-	Ports         []int                  `json:"forwardPorts,omitempty"`
-	RemoteUser    string                 `json:"remoteUser,omitempty"`
-	Extends       string                 `json:"extends,omitempty"`
+	Image              string                 `json:"image,omitempty"`
+	Dockerfile         string                 `json:"dockerFile,omitempty"`
+	Build             *BuildConfig           `json:"build,omitempty"`
+	Features          map[string]interface{} `json:"features,omitempty"`
+	Env               map[string]string      `json:"containerEnv,omitempty"`
+	Mounts            []string               `json:"mounts,omitempty"`
+	Ports             []int                  `json:"forwardPorts,omitempty"`
+	RemoteUser        string                 `json:"remoteUser,omitempty"`
+	Extends           string                 `json:"extends,omitempty"`
+	OnCreateCommand   string                 `json:"onCreateCommand,omitempty"`
+	PostCreateCommand string                 `json:"postCreateCommand,omitempty"`
+	PostStartCommand  string                 `json:"postStartCommand,omitempty"`
 }
 
 type BuildConfig struct {

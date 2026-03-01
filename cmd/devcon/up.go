@@ -51,11 +51,14 @@ var upCmd = &cobra.Command{
 
 		// Build first
 		spec := builder.Spec{
-			ContextDir: dir,
-			Image:      cfg.Image,
-			Dockerfile: cfg.Dockerfile,
-			Features:   cfg.Features,
-			Env:        cfg.Env,
+			ContextDir:        dir,
+			Image:            cfg.Image,
+			Dockerfile:        cfg.Dockerfile,
+			Features:         cfg.Features,
+			Env:              cfg.Env,
+			OnCreateCommand:  cfg.OnCreateCommand,
+			PostCreateCommand: cfg.PostCreateCommand,
+			PostStartCommand: cfg.PostStartCommand,
 		}
 
 		fmt.Println("Building image...")

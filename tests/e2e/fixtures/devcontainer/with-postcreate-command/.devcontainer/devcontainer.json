@@ -1,0 +1,4 @@
+{
+    "image": "alpine:latest",
+    "postCreateCommand": "echo 'POST_CREATE_EXECUTED' > /tmp/postcreate.txt"
+}
