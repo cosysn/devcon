@@ -1,0 +1,8 @@
+FROM alpine:latest
+
+FROM alpine:latest
+
+# Feature: test-feature (local)
+COPY .devcontainer/features/test-feature /tmp/features/test-feature
+RUN chmod +x /tmp/features/test-feature/install.sh && /tmp/features/test-feature/install.sh || echo 'Feature test-feature skipped'
+

@@ -101,9 +101,14 @@ func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 
 func (b *DockerBuilder) Up(ctx context.Context, spec Spec) error {
 	// Create and start container
+	// Use /bin/sh as default command to keep container running
+	cmd := []string{"/bin/sh", "-c", "while true; do sleep 3600; done"}
 	resp, err := b.client.ContainerCreate(ctx, &container.Config{
-		Image: spec.Image,
-		Env:   envToSlice(spec.Env),
+		Image:        spec.Image,
+		Env:          envToSlice(spec.Env),
+		Cmd:          cmd,
+		Tty:          true,
+		AttachStdin:  true,
 	}, nil, nil, nil, "")
 	if err != nil {
 		return err

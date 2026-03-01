@@ -1,0 +1,11 @@
+FROM mcr.microsoft.com/devcontainers/base:ubuntu
+
+# Feature: git (from OCI: ghcr.io/devcontainers/features/git:latest)
+RUN apt-get update && apt-get install -y git || echo 'Feature git installation skipped'
+
+# Feature: go (from OCI: ghcr.io/devcontainers/features/go:latest)
+RUN apt-get update && apt-get install -y golang || echo 'Feature go installation skipped'
+
+# Feature: docker-in-docker (from OCI: ghcr.io/devcontainers/features/docker-in-docker:latest)
+RUN echo 'Feature docker-in-docker requires manual installation' || echo 'Feature docker-in-docker installation skipped'
+
