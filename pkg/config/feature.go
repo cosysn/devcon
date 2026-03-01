@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 )
 
 type Feature struct {
@@ -139,11 +138,4 @@ func ResolveFeatures(dir string, features map[string]interface{}) error {
 	}
 
 	return nil
-}
-
-// isOCIReference checks if a string looks like an OCI registry reference
-func isOCIReference(s string) bool {
-	// OCI references typically contain / or : (for tag)
-	// Examples: ghcr.io/user/feature, localhost:5000/feature:v1
-	return strings.Contains(s, "/") || strings.Contains(s, ":")
 }

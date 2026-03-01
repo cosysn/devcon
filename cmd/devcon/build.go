@@ -212,11 +212,3 @@ func init() {
 	buildCmd.Flags().String("provider", "docker", "Build provider (docker)")
 	rootCmd.AddCommand(buildCmd)
 }
-
-func getFeatureNames(features map[string]*feature.ResolvedFeature) []string {
-	names := make([]string, 0, len(features))
-	for name := range features {
-		names = append(names, name)
-	}
-	return names
-}

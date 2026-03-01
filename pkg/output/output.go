@@ -86,7 +86,7 @@ func (p *PlainOutput) Print(msg string) {
 	if p.quiet {
 		return
 	}
-	fmt.Fprint(p.out, msg)
+	_, _ = fmt.Fprint(p.out, msg)
 }
 
 // Printf outputs a formatted message
@@ -94,7 +94,7 @@ func (p *PlainOutput) Printf(format string, args ...interface{}) {
 	if p.quiet {
 		return
 	}
-	fmt.Fprintf(p.out, format, args...)
+	_, _ = fmt.Fprintf(p.out, format, args...)
 }
 
 // Println outputs a message with newline
@@ -102,31 +102,31 @@ func (p *PlainOutput) Println(msg string) {
 	if p.quiet {
 		return
 	}
-	fmt.Fprintln(p.out, msg)
+	_, _ = fmt.Fprintln(p.out, msg)
 }
 
 // Verbose outputs a message only in verbose mode
 func (p *PlainOutput) Verbose(msg string) {
 	if p.verbose && !p.quiet {
-		fmt.Fprintln(p.out, msg)
+		_, _ = fmt.Fprintln(p.out, msg)
 	}
 }
 
 // Verbosef outputs a formatted message only in verbose mode
 func (p *PlainOutput) Verbosef(format string, args ...interface{}) {
 	if p.verbose && !p.quiet {
-		fmt.Fprintf(p.out, format+"\n", args...)
+		_, _ = fmt.Fprintf(p.out, format+"\n", args...)
 	}
 }
 
 // Error outputs an error message
 func (p *PlainOutput) Error(msg string) {
-	fmt.Fprintln(p.errOut, "Error:", msg)
+	_, _ = fmt.Fprintln(p.errOut, "Error:", msg)
 }
 
 // Errorf outputs a formatted error message
 func (p *PlainOutput) Errorf(format string, args ...interface{}) {
-	fmt.Fprintf(p.errOut, "Error: "+format+"\n", args...)
+	_, _ = fmt.Fprintf(p.errOut, "Error: "+format+"\n", args...)
 }
 
 // Success outputs a success message
@@ -134,7 +134,7 @@ func (p *PlainOutput) Success(msg string) {
 	if p.quiet {
 		return
 	}
-	fmt.Fprintln(p.out, "✓", msg)
+	_, _ = fmt.Fprintln(p.out, "✓", msg)
 }
 
 // Successf outputs a formatted success message
@@ -142,7 +142,7 @@ func (p *PlainOutput) Successf(format string, args ...interface{}) {
 	if p.quiet {
 		return
 	}
-	fmt.Fprintf(p.out, "✓ "+format+"\n", args...)
+	_, _ = fmt.Fprintf(p.out, "✓ "+format+"\n", args...)
 }
 
 // Warn outputs a warning message
@@ -150,7 +150,7 @@ func (p *PlainOutput) Warn(msg string) {
 	if p.quiet {
 		return
 	}
-	fmt.Fprintln(p.out, "Warning:", msg)
+	_, _ = fmt.Fprintln(p.out, "Warning:", msg)
 }
 
 // Warnf outputs a formatted warning message
@@ -158,7 +158,7 @@ func (p *PlainOutput) Warnf(format string, args ...interface{}) {
 	if p.quiet {
 		return
 	}
-	fmt.Fprintf(p.out, "Warning: "+format+"\n", args...)
+	_, _ = fmt.Fprintf(p.out, "Warning: "+format+"\n", args...)
 }
 
 // StartProgress starts a progress indicator (no-op for plain output)
@@ -166,7 +166,7 @@ func (p *PlainOutput) StartProgress(msg string) {
 	if p.quiet {
 		return
 	}
-	fmt.Fprint(p.out, msg+"... ")
+	_, _ = fmt.Fprint(p.out, msg+"... ")
 }
 
 // StopProgress stops the progress indicator
@@ -174,12 +174,17 @@ func (p *PlainOutput) StopProgress(msg string) {
 	if p.quiet {
 		return
 	}
-	fmt.Fprintln(p.out, msg)
+	_, _ = fmt.Fprintln(p.out, msg)
 }
 
 // SetVerbose sets verbose mode
 func (p *PlainOutput) SetVerbose(v bool) {
 	p.verbose = v
+}
+
+// SetQuiet sets quiet mode
+func (p *PlainOutput) SetQuiet(v bool) {
+	p.quiet = v
 }
 
 // IsVerbose returns verbose mode status
@@ -386,9 +391,8 @@ func ApplyOutputSettings(cmd *cobra.Command, cmdName string) {
 	}
 
 	o.SetVerbose(verbose)
-	if quiet {
-		// Quiet mode - we need to handle this specially
-		// For now, just use plain output but don't print anything
+	if p, ok := o.(*PlainOutput); ok {
+		p.SetQuiet(quiet)
 	}
 
 	SetGlobalOutput(o)
