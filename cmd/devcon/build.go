@@ -134,7 +134,7 @@ var buildCmd = &cobra.Command{
 			// Generate Dockerfile with features if we have features and an image
 			if cfg.Image != "" && len(resolvedFeatures) > 0 {
 				out.Verbose("Generating Dockerfile with features...")
-				dockerfileContent, err := feature.GenerateDockerfile(cfg.Image, resolvedFeatures)
+				dockerfileContent, err := feature.GenerateDockerfileWithUser(cfg.Image, resolvedFeatures, cfg.User, cfg.Workspace)
 				if err != nil {
 					return fmt.Errorf("failed to generate Dockerfile: %w", err)
 				}

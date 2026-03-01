@@ -18,15 +18,27 @@ type DevcontainerConfig struct {
 	Mounts            []string               `json:"mounts,omitempty"`
 	Ports             []int                  `json:"forwardPorts,omitempty"`
 	RemoteUser        string                 `json:"remoteUser,omitempty"`
+	User              string                 `json:"user,omitempty"`
+	Workspace         string                 `json:"workspace,omitempty"`
 	Extends           string                 `json:"extends,omitempty"`
 	OnCreateCommand   string                 `json:"onCreateCommand,omitempty"`
 	PostCreateCommand string                 `json:"postCreateCommand,omitempty"`
 	PostStartCommand  string                 `json:"postStartCommand,omitempty"`
+	Customizations    *Customizations        `json:"customizations,omitempty"`
 }
 
 type BuildConfig struct {
 	Dockerfile string `json:"dockerfile,omitempty"`
 	Context    string `json:"context,omitempty"`
+}
+
+type Customizations struct {
+	VSCode *VSCodeCustomization `json:"vscode,omitempty"`
+}
+
+type VSCodeCustomization struct {
+	Extensions []string               `json:"extensions,omitempty"`
+	Settings   map[string]interface{} `json:"settings,omitempty"`
 }
 
 func ParseDevcontainer(dir string) (*DevcontainerConfig, error) {
@@ -158,8 +170,39 @@ func ResolveExtends(dir string, config *DevcontainerConfig) (*DevcontainerConfig
 	if config.RemoteUser != "" {
 		base.RemoteUser = config.RemoteUser
 	}
+	if config.User != "" {
+		base.User = config.User
+	}
+	if config.Workspace != "" {
+		base.Workspace = config.Workspace
+	}
 	if config.Extends != "" {
 		base.Extends = config.Extends
+	}
+
+	// Merge customizations
+	if config.Customizations != nil {
+		if base.Customizations == nil {
+			base.Customizations = &Customizations{}
+		}
+		if config.Customizations.VSCode != nil {
+			if base.Customizations.VSCode == nil {
+				base.Customizations.VSCode = &VSCodeCustomization{}
+			}
+			// Merge extensions
+			if len(config.Customizations.VSCode.Extensions) > 0 {
+				base.Customizations.VSCode.Extensions = append(base.Customizations.VSCode.Extensions, config.Customizations.VSCode.Extensions...)
+			}
+			// Merge settings
+			if config.Customizations.VSCode.Settings != nil {
+				if base.Customizations.VSCode.Settings == nil {
+					base.Customizations.VSCode.Settings = make(map[string]interface{})
+				}
+				for k, v := range config.Customizations.VSCode.Settings {
+					base.Customizations.VSCode.Settings[k] = v
+				}
+			}
+		}
 	}
 
 	return &base, nil

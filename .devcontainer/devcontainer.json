@@ -1,5 +1,7 @@
 {
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "user": "vscode",
+  "workspace": "/home/vscode/workspace",
   "features": {
     "docker-in-docker": {},
     "git": {},
@@ -10,7 +12,12 @@
       "extensions": [
         "golang.go",
         "github.copilot"
-      ]
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.eol": "\n",
+        "editor.formatOnSave": true
+      }
     }
   },
   "postCreateCommand": "go mod download"

@@ -10,10 +10,21 @@ import (
 // GenerateDockerfile generates a Dockerfile that includes feature installation
 // For remote features, we'll use a simpler approach: try to install using apt if the feature is "git"
 func GenerateDockerfile(baseImage string, features map[string]*ResolvedFeature) (string, error) {
+	return GenerateDockerfileWithUser(baseImage, features, "", "")
+}
+
+// GenerateDockerfileWithUser generates a Dockerfile with optional user and workspace configuration
+func GenerateDockerfileWithUser(baseImage string, features map[string]*ResolvedFeature, user string, workspace string) (string, error) {
 	var sb strings.Builder
 
 	// Start with base image
 	sb.WriteString(fmt.Sprintf("FROM %s\n\n", baseImage))
+
+	// Add user and workspace configuration before features if specified
+	if user != "" {
+		sb.WriteString(fmt.Sprintf("# Create user: %s\n", user))
+		sb.WriteString(fmt.Sprintf("RUN useradd -m -s /bin/bash %s || echo 'User %s already exists'\n\n", user, user))
+	}
 
 	// Add features
 	for id, f := range features {
@@ -30,6 +41,20 @@ func GenerateDockerfile(baseImage string, features map[string]*ResolvedFeature) 
 			installCmd := generateInstallCommand(id)
 			sb.WriteString(fmt.Sprintf("RUN %s || echo 'Feature %s installation skipped'\n\n", installCmd, id))
 		}
+	}
+
+	// Add workspace directory and ownership
+	if user != "" {
+		workspaceDir := workspace
+		if workspaceDir == "" {
+			workspaceDir = fmt.Sprintf("/home/%s/workspace", user)
+		}
+		sb.WriteString(fmt.Sprintf("# Create workspace directory: %s\n", workspaceDir))
+		sb.WriteString(fmt.Sprintf("RUN mkdir -p %s && chown -R %s:%s %s\n\n", workspaceDir, user, user, workspaceDir))
+
+		// Set default user
+		sb.WriteString(fmt.Sprintf("USER %s\n", user))
+		sb.WriteString(fmt.Sprintf("WORKDIR %s\n", workspaceDir))
 	}
 
 	return sb.String(), nil
