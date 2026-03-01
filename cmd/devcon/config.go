@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/devcon/cli/pkg/config"
+	"github.com/devcon/cli/pkg/output"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +15,7 @@ var configCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
-		output, _ := cmd.Flags().GetString("output")
+		out := output.GetGlobalOutput()
 
 		// Validate directory
 		stat, err := os.Stat(dir)
@@ -38,25 +38,18 @@ var configCmd = &cobra.Command{
 			return fmt.Errorf("failed to resolve extends: %w", err)
 		}
 
-		// Output
-		if output == "json" {
-			encoder := json.NewEncoder(os.Stdout)
-			encoder.SetIndent("", "  ")
-			if err := encoder.Encode(cfg); err != nil {
-				return fmt.Errorf("failed to encode config: %w", err)
-			}
-		} else {
-			fmt.Printf("Image: %s\n", cfg.Image)
-			fmt.Printf("Dockerfile: %s\n", cfg.Dockerfile)
-			fmt.Printf("Features: %v\n", cfg.Features)
-			fmt.Printf("Env: %v\n", cfg.Env)
-		}
+		// Output - use global output mode
+		// Note: The global --output flag takes precedence
+		out.Success("Config validated successfully")
+		out.Printf("Image: %s\n", cfg.Image)
+		out.Printf("Dockerfile: %s\n", cfg.Dockerfile)
+		out.Printf("Features: %v\n", cfg.Features)
+		out.Printf("Env: %v\n", cfg.Env)
 
 		return nil
 	},
 }
 
 func init() {
-	configCmd.Flags().String("output", "text", "Output format (text, json)")
 	rootCmd.AddCommand(configCmd)
 }

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/devcon/cli/pkg/feature"
+	"github.com/devcon/cli/pkg/output"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +21,8 @@ var featuresPackageCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
-		output, _ := cmd.Flags().GetString("output")
+		outputPath, _ := cmd.Flags().GetString("output-file")
+		out := output.GetGlobalOutput()
 
 		// Validate input directory
 		stat, err := os.Stat(dir)
@@ -37,20 +39,20 @@ var featuresPackageCmd = &cobra.Command{
 			return fmt.Errorf("devcontainer-feature.json not found in %s", dir)
 		}
 
-		if output == "" {
-			output = filepath.Join(dir, "feature.tar.gz")
+		if outputPath == "" {
+			outputPath = filepath.Join(dir, "feature.tar.gz")
 		}
 
-		if err := feature.PackageFeature(dir, output); err != nil {
+		if err := feature.PackageFeature(dir, outputPath); err != nil {
 			return fmt.Errorf("failed to package feature: %w", err)
 		}
 
-		fmt.Println("Feature packaged:", output)
+		out.Successf("Feature packaged: %s", outputPath)
 		return nil
 	},
 }
 
 func init() {
-	featuresPackageCmd.Flags().String("output", "", "Output path")
+	featuresPackageCmd.Flags().String("output-file", "", "Output path")
 	featuresCmd.AddCommand(featuresPackageCmd)
 }

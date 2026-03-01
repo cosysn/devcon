@@ -1,12 +1,14 @@
 package builder
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -15,10 +17,18 @@ import (
 	"github.com/moby/go-archive/compression"
 )
 
-type DockerBuilder struct {
-	client *client.Client
+// BuildLogger is an interface for receiving build progress updates
+type BuildLogger interface {
+	Write(line string)
 }
 
+// DockerBuilder implements the Builder interface for Docker
+type DockerBuilder struct {
+	client *client.Client
+	logger BuildLogger
+}
+
+// NewDockerBuilder creates a new Docker builder
 func NewDockerBuilder() (*DockerBuilder, error) {
 	cli, err := client.NewClientWithOpts(
 		client.FromEnv,
@@ -30,6 +40,18 @@ func NewDockerBuilder() (*DockerBuilder, error) {
 	return &DockerBuilder{client: cli}, nil
 }
 
+// SetLogger sets the build logger
+func (b *DockerBuilder) SetLogger(logger BuildLogger) {
+	b.logger = logger
+}
+
+func (b *DockerBuilder) log(format string, args ...interface{}) {
+	if b.logger != nil {
+		b.logger.Write(fmt.Sprintf(format, args...))
+	}
+}
+
+// Build builds a Docker image
 func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 	// If no Dockerfile is specified but we have an image, just return the image name
 	if spec.Dockerfile == "" && spec.Image != "" {
@@ -57,10 +79,12 @@ func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 
 	// Read dockerfile content
 	dockerfileFullPath := filepath.Join(contextPath, dockerfilePath)
-	_, err := os.ReadFile(dockerfileFullPath)
+	dockerfileContent, err := os.ReadFile(dockerfileFullPath)
 	if err != nil {
 		return "", err
 	}
+
+	b.log("Step 1/1 : FROM %s", extractBaseImage(string(dockerfileContent)))
 
 	// Create build context as tar archive
 	buildContext, err := archive.Tar(contextPath, compression.None)
@@ -79,6 +103,7 @@ func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 		Dockerfile: dockerfilePath,
 		Tags:       []string{"devcon-build:latest"},
 		Remove:     true,
+		SuppressOutput: false,
 	})
 	if err != nil {
 		return "", err
@@ -89,10 +114,25 @@ func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 		}
 	}()
 
-	// Read response body to ensure build completes
-	_, err = io.Copy(io.Discard, resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to read build response: %w", err)
+	// Read response body and stream output
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Try to parse as JSON and extract useful information
+		var buildLog map[string]interface{}
+		if err := json.Unmarshal([]byte(line), &buildLog); err == nil {
+			// Extract stream message
+			if stream, ok := buildLog["stream"]; ok {
+				b.log(strings.TrimSpace(stream.(string)))
+			} else if aux, ok := buildLog["aux"]; ok {
+				// This typically contains the final image ID
+				b.log("Build completed: %v", aux)
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", fmt.Errorf("error reading build output: %w", err)
 	}
 
 	// Note: In production, you'd parse the response to get the image ID
@@ -100,6 +140,19 @@ func (b *DockerBuilder) Build(ctx context.Context, spec Spec) (string, error) {
 	return "devcon-build:latest", nil
 }
 
+// extractBaseImage extracts the base image from a Dockerfile
+func extractBaseImage(dockerfile string) string {
+	lines := strings.Split(dockerfile, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "FROM ") {
+			return strings.TrimPrefix(line, "FROM ")
+		}
+	}
+	return "unknown"
+}
+
+// Up starts a container from the built image
 func (b *DockerBuilder) Up(ctx context.Context, spec Spec) error {
 	// Execute onCreateCommand before container starts (during creation)
 	if spec.OnCreateCommand != "" {

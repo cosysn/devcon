@@ -6,6 +6,7 @@ import (
 
 	"github.com/devcon/cli/pkg/config"
 	"github.com/devcon/cli/pkg/feature"
+	"github.com/devcon/cli/pkg/output"
 	"github.com/spf13/cobra"
 )
 
@@ -15,6 +16,7 @@ var inspectCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dir := args[0]
+		out := output.GetGlobalOutput()
 
 		// Validate directory
 		stat, err := os.Stat(dir)
@@ -44,23 +46,24 @@ var inspectCmd = &cobra.Command{
 		}
 
 		// Output
-		fmt.Println("=== Config ===")
-		fmt.Printf("Image: %s\n", cfg.Image)
-		fmt.Printf("Dockerfile: %s\n", cfg.Dockerfile)
-		fmt.Printf("Features: %v\n", cfg.Features)
+		out.Println("=== Config ===")
+		out.Printf("Image: %s\n", cfg.Image)
+		out.Printf("Dockerfile: %s\n", cfg.Dockerfile)
+		out.Printf("Features: %v\n", cfg.Features)
 
-		fmt.Println("\n=== Local Features ===")
+		out.Println("\n=== Local Features ===")
 		if len(localFeatures) == 0 {
-			fmt.Println("No local features found")
+			out.Println("No local features found")
 		} else {
 			for id, f := range localFeatures {
-				fmt.Printf("- %s (version: %s)\n", id, f.Version)
+				out.Printf("- %s (version: %s)\n", id, f.Version)
 				if len(f.DependsOn) > 0 {
-					fmt.Printf("  dependsOn: %v\n", f.DependsOn)
+					out.Printf("  dependsOn: %v\n", f.DependsOn)
 				}
 			}
 		}
 
+		out.Success("Inspection complete")
 		return nil
 	},
 }
