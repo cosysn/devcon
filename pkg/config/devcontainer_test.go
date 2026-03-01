@@ -123,11 +123,11 @@ func TestResolveExtends(t *testing.T) {
 	}
 
 	// Should have merged env
-	if result.Env == nil {
+	if result.ContainerEnv == nil {
 		t.Fatal("env should not be nil")
 	}
-	if v, ok := result.Env["BASE"]; !ok || v != "value" {
-		t.Errorf("env should contain BASE=value, got %v", result.Env)
+	if v, ok := result.ContainerEnv["BASE"]; !ok || v != "value" {
+		t.Errorf("env should contain BASE=value, got %v", result.ContainerEnv)
 	}
 }
 
@@ -234,11 +234,11 @@ func TestResolveExtendsMultipleLevels(t *testing.T) {
 	}
 
 	// Should have merged env (level2 should override level1)
-	if result.Env == nil {
+	if result.ContainerEnv == nil {
 		t.Fatal("env should not be nil")
 	}
-	if result.Env["LEVEL"] != "2" {
-		t.Errorf("expected LEVEL=2, got %v", result.Env["LEVEL"])
+	if result.ContainerEnv["LEVEL"] != "2" {
+		t.Errorf("expected LEVEL=2, got %v", result.ContainerEnv["LEVEL"])
 	}
 }
 

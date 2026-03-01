@@ -67,11 +67,22 @@ func generateInstallCommand(featureID string) string {
 		"git":   "apt-get update && apt-get install -y git",
 		"node":  "apt-get update && apt-get install -y nodejs npm",
 		"python": "apt-get update && apt-get install -y python3 python3-pip",
-		"go":    "apt-get update && apt-get install -y golang",
+		"go":    "apt-get update && apt-get install -y golang-go",
 		"docker": "apt-get update && apt-get install -y docker.io",
+		"docker-in-docker": "apt-get update && apt-get install -y docker.io",
 	}
 
-	if cmd, ok := featureInstallCmds[featureID]; ok {
+	// Extract the feature name from the OCI reference
+	// e.g., "ghcr.io/devcontainers/features/go:1" -> "go"
+	featureName := featureID
+	if idx := strings.LastIndex(featureID, "/"); idx != -1 {
+		featureName = featureID[idx+1:]
+	}
+	if idx := strings.Index(featureName, ":"); idx != -1 {
+		featureName = featureName[:idx]
+	}
+
+	if cmd, ok := featureInstallCmds[featureName]; ok {
 		return cmd
 	}
 

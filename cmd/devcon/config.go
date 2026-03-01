@@ -44,7 +44,7 @@ var configCmd = &cobra.Command{
 		out.Printf("Image: %s\n", cfg.Image)
 		out.Printf("Dockerfile: %s\n", cfg.Dockerfile)
 		out.Printf("Features: %v\n", cfg.Features)
-		out.Printf("Env: %v\n", cfg.Env)
+		out.Printf("Env: %v\n", cfg.ContainerEnv)
 
 		return nil
 	},

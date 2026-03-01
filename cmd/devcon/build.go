@@ -68,8 +68,8 @@ var buildCmd = &cobra.Command{
 		if len(cfg.Features) > 0 {
 			out.Verbosef("  Features: %v", cfg.Features)
 		}
-		if len(cfg.Env) > 0 {
-			out.Verbosef("  Environment: %v", cfg.Env)
+		if len(cfg.ContainerEnv) > 0 {
+			out.Verbosef("  Environment: %v", cfg.ContainerEnv)
 		}
 
 		// Resolve extends
@@ -134,7 +134,7 @@ var buildCmd = &cobra.Command{
 			// Generate Dockerfile with features if we have features and an image
 			if cfg.Image != "" && len(resolvedFeatures) > 0 {
 				out.Verbose("Generating Dockerfile with features...")
-				dockerfileContent, err := feature.GenerateDockerfileWithUser(cfg.Image, resolvedFeatures, cfg.User, cfg.Workspace)
+				dockerfileContent, err := feature.GenerateDockerfileWithUser(cfg.Image, resolvedFeatures, cfg.RemoteUser, cfg.WorkspaceFolder)
 				if err != nil {
 					return fmt.Errorf("failed to generate Dockerfile: %w", err)
 				}
@@ -179,7 +179,7 @@ var buildCmd = &cobra.Command{
 			Image:      cfg.Image,
 			Dockerfile: cfg.Dockerfile,
 			Features:   cfg.Features,
-			Env:        cfg.Env,
+			Env:        cfg.ContainerEnv,
 		}
 
 		out.Verbosef("Build context: %s", spec.ContextDir)
